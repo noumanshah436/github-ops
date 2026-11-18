@@ -1,0 +1,15 @@
+{
+    "include": ["src", "tests", "run.py"],
+    "venvPath": ".",
+    "venv": ".venv",
+    "typeCheckingMode": "standard",
+    "deprecateTypingAliases": true,
+    "reportUnnecessaryCast": "error",
+    "reportDuplicateImport": "error",
+    "reportMatchNotExhaustive": "error",
+    "reportMissingParameterType": "warning",
+    "reportUnusedVariable": "error",
+    "reportUnnecessaryComparison": "warning",
+    "reportUnusedImport": "warning",
+    "reportImplicitOverride": "warning"
+}

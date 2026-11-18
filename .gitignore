@@ -1,0 +1,14 @@
+# secrets: GITHUB_TOKEN and GITHUB_TOKEN_MERGE live here
+backend/.env
+.env
+
+# python
+backend/.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# node
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
