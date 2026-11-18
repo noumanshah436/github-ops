@@ -1,0 +1,36 @@
+gh-ops can already list, create, approve and merge PRs (with commits, files, diff and comments), and it can list Actions runs, read logs, re-run failed jobs and cancel runs. These are the features I'd add, in rough order of value.
+
+Quick wins (small, high value)
+
+1. Comment on a PR. You can read comments (GET /pulls/{n}/comments) but you can't write any. Add a box for general comments, and later add inline comments on lines in DiffView.
+2. Update branch / auto-merge. Add an "Update branch" button for when the base has moved ahead (PUT /pulls/{n}/update-branch). Also add "Enable auto-merge" so a PR merges by itself once its checks pass.
+3. Close, reopen or mark ready. Let you close or reopen a PR, and switch it between draft and ready for review.
+4. Start a workflow by hand. GET /workflows already exists, so add a "Run workflow" button with branch and inputs (workflow_dispatch). The Actions token already has write access for this.
+5. Live refresh. Poll runs that are still going, and PR checks, every few seconds so the status icons update without reloading. You could also stream the log of a job while it's running.
+
+Medium features
+
+6. Request changes and assign people. Add "Request changes" next to Approve. Also let you request reviewers and set labels, assignees and milestones when creating or editing a PR.
+7. Dashboard across repos. The home page would show "PRs waiting for my review", "My open PRs" and "Failing runs" for every repo the tokens can see. That saves going repo by repo.
+8. Run history per workflow. Filter runs by workflow, branch, status and actor, with a simple pass/fail and duration trend.
+9. Download artifacts and logs. List a run's artifacts and download them, plus a "download full log" (zip) option.
+10. Search and filter PRs. Search the PR list by title, author, label or branch, and sort it.
+
+Bigger ideas
+
+11. Bulk actions. Approve and merge several PRs at once, such as dependency-update PRs whose checks are green.
+12. Notifications. Show a desktop notification when a watched run finishes or someone asks you to review a PR.
+13. Branch management. List branches, delete merged ones, and show branch protection rules.
+14. Release helper. Create a tag or release, with notes generated from the PRs merged since the last release.
+
+Hardening
+
+- Encrypt saved tokens. Check how token_store.py saves the tokens. If they're in plain text, use Windows DPAPI or keyring instead.
+- More tests. There's only one test file, tests/test_backend.py. Add tests for the merge and approve paths, and for GitHub errors like a merge conflict or branch protection blocking a merge (405/409).
+
+My pick would be items 1, 2 and 4. Each one is a small backend route plus a button, and together they cover most of what you'd still leave the app to do on github.com. Tell me which ones you want and I'll plan them or build them.
+
+Sautéed for 18s · done 8:43 PM
+
+recap: You asked what features to add to gh-ops, and I suggested ideas like PR comments, update-branch/auto-merge, and a manual workflow-run button. Next, pick the ones you want and I'll plan or build them. (turn off recaps in /config)
+ 
