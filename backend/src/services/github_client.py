@@ -1,5 +1,6 @@
 """Async GitHub REST client that authenticates with a stored token."""
 
+import logging
 from typing import Any
 
 import httpx
@@ -7,6 +8,9 @@ from fastapi import HTTPException
 
 from src.config import settings
 from src.services.token_store import LABELS, TokenKind, token_store
+
+logger = logging.getLogger(__name__)
+MAX_ERROR_CHARS = 500
 
 
 class GitHubClient:
@@ -47,8 +51,10 @@ class GitHubClient:
         clean = {k: v for k, v in (params or {}).items() if v not in (None, "")}
         try:
             response = await self._http.request(method, path, params=clean, json=json, headers=headers)
+        except httpx.TimeoutException as exc:
+            raise HTTPException(504, f"GitHub didn't answer in time ({type(exc).__name__})") from exc
         except httpx.HTTPError as exc:
-            raise HTTPException(502, f"Could not reach GitHub: {exc}") from exc
+            raise HTTPException(502, f"Could not reach GitHub: {type(exc).__name__}: {exc}") from exc
         if response.status_code >= 400:
             raise HTTPException(response.status_code, f"GitHub: {_error_message(response)}")
         return response
@@ -68,13 +74,16 @@ class GitHubClient:
         return body["data"]
 
     async def get_pages(self, path: str, max_pages: int = 10, **params: Any) -> list[Any]:
-        """Collect a paginated list endpoint, 100 items per page."""
+        """Collect a paginated list endpoint, 100 items per page, stopping after max_pages."""
         items: list[Any] = []
         for page in range(1, max_pages + 1):
             batch = await self.get_json(path, per_page=100, page=page, **params)
             items += batch
             if len(batch) < 100:
-                break
+                return items
+        logger.warning(
+            "%s: stopped after %d pages (%d items); there may be more", path, max_pages, len(items)
+        )
         return items
 
 
@@ -82,13 +91,15 @@ def _error_message(response: httpx.Response) -> str:
     try:
         body = response.json()
     except ValueError:
-        return response.text[:500]
+        return response.text[:MAX_ERROR_CHARS]
+    if not isinstance(body, dict):
+        return response.text[:MAX_ERROR_CHARS]
     message = str(body.get("message", response.text))
     errors = body.get("errors")
     if errors:
         details = [e.get("message", str(e)) if isinstance(e, dict) else str(e) for e in errors]
         message += " — " + "; ".join(details)
-    return message
+    return message[:MAX_ERROR_CHARS]
 
 
 github = GitHubClient()

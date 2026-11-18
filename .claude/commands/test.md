@@ -43,7 +43,7 @@ cd app/client && bun run build
 
 ## Post Linear Comment (if issue_id provided)
 
-After running tests, post a comment using `mcp__linear__create_comment`:
+After running tests, post a comment using `mcp__linear-server__create_comment`:
 
 ```markdown
 ## 🧪 Test Results

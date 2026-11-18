@@ -68,7 +68,7 @@ Execute each phase in sequence. If a phase fails, follow the retry/stop rules be
   - **"Yes, merge it"** — Continue with merge
   - **"No, I'll review first"** — Stop and wait
 - If the user approves: Auto-merge the PR (squash merge, delete branch)
-- If the user declines: STOP the pipeline immediately. Do not post any Linear comments, do not take any further action. Simply stop and wait. The user can resume later by typing "continue deployment" or similar, at which point continue from the merge step onward.
+- If the user declines: STOP the pipeline immediately. Do not post any further Linear comments (the ones from earlier phases stay) and take no further action. Simply stop and wait. The user can resume later by typing "continue deployment" or similar, at which point continue from the merge step onward.
 - **Linear Comment**: Post final summary with branch name, PR link, and merge status
 
 ### Linear Comment Templates

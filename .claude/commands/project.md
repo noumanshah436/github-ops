@@ -37,19 +37,19 @@ For each agreed-upon feature, define:
 
 Before creating issues, associate them with a Linear project:
 
-1. **List existing projects**: Use `mcp__linear__list_projects` to show available projects
+1. **List existing projects**: Use `mcp__linear-server__list_projects` to show available projects
 2. **Ask user to choose**:
    - Select an existing project from the list
    - Create a new project for this work
 3. **If creating new project**:
-   - Use `mcp__linear__create_project` with:
+   - Use `mcp__linear-server__create_project` with:
      - `name`: Project name
      - `team`: The team name
      - `summary`: Brief description (max 255 chars)
      - `description`: **Full project spec** (see format below) - this is the source of truth
      - `state`: "In Progress" for active projects
 4. **Store the project ID** for use when creating issues
-5. **After creating issues**: Use `mcp__linear__update_project` to update the description with the Linear issue IDs
+5. **After creating issues**: Use `mcp__linear-server__update_project` to update the description with the Linear issue IDs
 
 Present the options clearly:
 ```
@@ -65,7 +65,7 @@ Would you like to:
 ### 5. Create Linear Issues
 
 After user confirms the plan and selects/creates a project, create Linear issues:
-- Use `mcp__linear__create_issue` MCP tool for each feature
+- Use `mcp__linear-server__create_issue` MCP tool for each feature
 - **IMPORTANT**: Include `project` parameter with the selected/created project ID or name
 - Set appropriate priority and labels
 - Link dependencies where supported

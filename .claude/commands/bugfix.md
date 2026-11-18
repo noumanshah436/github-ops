@@ -52,7 +52,7 @@ git commit -m "fix: <concise description of what was fixed>"
 
 **IMPORTANT**: Always create a Linear bug issue for documentation.
 
-Use `mcp__linear__create_issue` with:
+Use `mcp__linear-server__create_issue` with:
 - **title**: Clear description of the bug
 - **team**: "Acadexis"
 - **project**: Current project (e.g., "Job Posting")

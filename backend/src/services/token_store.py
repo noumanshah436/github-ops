@@ -37,7 +37,7 @@ class TokenStore:
         for line in self._lines():
             key, sep, value = line.removeprefix("export ").partition("=")
             if sep and key.strip() == name:
-                return value.strip().strip("'\"") or None
+                return _unquote(value.strip()) or None
         return None
 
     def _write(self, name: str, value: str | None) -> None:
@@ -65,6 +65,13 @@ class TokenStore:
 
     def delete(self, kind: TokenKind) -> None:
         self._write(ENV_NAMES[kind], None)
+
+
+def _unquote(value: str) -> str:
+    """Remove one pair of matching surrounding quotes, as dotenv does. A lone quote is kept."""
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+        return value[1:-1]
+    return value
 
 
 def mask(token: str) -> str:

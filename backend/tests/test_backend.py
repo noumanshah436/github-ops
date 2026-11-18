@@ -1,14 +1,16 @@
 """Offline tests: GitHub is never called; the client's request method is mocked."""
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from src.main import app
-from src.services.github_client import github
+from src.services.github_client import _error_message, github
 from src.services.token_store import TokenStore, mask, token_store
 from src.utils.checks import summarize_checks
 
@@ -185,6 +187,8 @@ def test_cors_allows_only_the_frontend_origin() -> None:
     assert ok.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"
     other = client.options("/api/tokens/create", headers={"Origin": "https://evil.example", **preflight})
     assert "access-control-allow-origin" not in other.headers
+    simple = client.get("/api/health", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in simple.headers
 
 
 def test_root_redirects_to_swagger() -> None:
@@ -212,3 +216,30 @@ def test_runs_list_is_paged(env_file: Path, monkeypatch: pytest.MonkeyPatch) -> 
     assert body["last_page"] == 34
 
     assert client.get("/api/repos/o/r/actions/runs?page=0").status_code == 422
+
+
+def test_env_file_values_lose_only_matching_quotes(env_file: Path) -> None:
+    env_file.write_text('GITHUB_TOKEN="abc"\nGITHUB_TOKEN_MERGE=abc\'\n', encoding="utf-8")
+    store = TokenStore(env_file)
+    assert store.get("create") == "abc"
+    assert store.get("merge") == "abc'"
+
+
+def test_github_error_messages_are_truncated() -> None:
+    huge = "x" * 5000
+    assert len(_error_message(httpx.Response(422, json={"message": huge}))) == 500
+    assert len(_error_message(httpx.Response(500, text=huge))) == 500
+    assert _error_message(httpx.Response(422, json=["not", "a", "dict"])) == '["not","a","dict"]'
+
+
+@pytest.mark.parametrize(("error_type", "status"), [("FORBIDDEN", 403), ("NOT_FOUND", 502)])
+def test_graphql_errors_in_a_200_body_raise(
+    monkeypatch: pytest.MonkeyPatch, error_type: str, status: int
+) -> None:
+    async def fake_request(method: str, path: str, kind: str = "create", **kwargs: Any) -> httpx.Response:
+        return httpx.Response(200, json={"data": None, "errors": [{"type": error_type, "message": "nope"}]})
+
+    monkeypatch.setattr(github, "request", fake_request)
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(github.graphql("query { viewer { login } }", {}))
+    assert (exc.value.status_code, exc.value.detail) == (status, "GitHub: nope")
