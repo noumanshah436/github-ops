@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { User } from "../api/types";
 
@@ -35,4 +35,33 @@ export function Loading({ what = "Loading" }: { what?: string }) {
 
 export function Empty({ children }: { children: ReactNode }) {
   return <div className="empty">{children}</div>;
+}
+
+/** Button that copies text to the clipboard and briefly confirms it. `text` may be a function so callers can build it lazily. */
+export function CopyButton({
+  text,
+  label = "Copy",
+  title,
+  className = "btn btn-sm",
+}: {
+  text: string | (() => string);
+  label?: string;
+  title?: string;
+  className?: string;
+}) {
+  const [state, setState] = useState<"ok" | "fail" | null>(null);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(typeof text === "function" ? text() : text);
+      setState("ok");
+    } catch {
+      setState("fail");
+    }
+    window.setTimeout(() => setState(null), 2000);
+  };
+  return (
+    <button type="button" className={className} title={title} onClick={() => void copy()}>
+      {state === "ok" ? "Copied ✓" : state === "fail" ? "Copy failed" : label}
+    </button>
+  );
 }

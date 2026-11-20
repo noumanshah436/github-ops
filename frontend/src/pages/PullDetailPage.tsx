@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { api } from "../api/client";
 import type { Comment, Commit, FileChange, PullDetail } from "../api/types";
-import { Avatar, ErrorBox, Flash, Loading } from "../components/common";
+import { Avatar, CopyButton, ErrorBox, Flash, Loading } from "../components/common";
 import { DiffView } from "../components/DiffView";
 import { Markdown } from "../components/Markdown";
 import { StatusIcon } from "../components/StatusIcon";
@@ -315,6 +315,7 @@ export function PullDetailPage() {
         <a href={pr.html_url} target="_blank" rel="noreferrer" className="btn btn-sm">
           Open on GitHub ↗
         </a>
+        <CopyButton text={pr.html_url} label="Copy URL" title={pr.html_url} />
       </div>
       <div className="pr-meta">
         <PrState detail={data} />

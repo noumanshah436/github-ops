@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { api } from "../api/client";
 import type { Job, RunDetail } from "../api/types";
-import { ErrorBox, Flash, Loading } from "../components/common";
+import { CopyButton, ErrorBox, Flash, Loading } from "../components/common";
 import { StatusIcon, StatusLabel } from "../components/StatusIcon";
 import { useApi } from "../hooks/useApi";
 import { duration, timeAgo } from "../utils/format";
@@ -42,6 +42,11 @@ function JobLog({ base, job }: { base: string; job: Job }) {
         </label>
         <span className="spacer" />
         <span className="muted">{lines.length} lines</span>
+        <CopyButton
+          text={() => `# ${job.name}\n${shown.join("\n")}`}
+          label={errorsOnly ? "Copy shown" : "Copy log"}
+          title={errorsOnly ? "Copy the filtered lines" : "Copy the whole log"}
+        />
         <button type="button" className="btn btn-sm" onClick={reload}>
           ↻
         </button>

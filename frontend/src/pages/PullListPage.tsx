@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { api, query } from "../api/client";
 import type { PullPage, PullSummary } from "../api/types";
-import { Avatar, Empty, ErrorBox, Loading } from "../components/common";
+import { Avatar, CopyButton, Empty, ErrorBox, Loading } from "../components/common";
 import { useApi } from "../hooks/useApi";
 import { timeAgo } from "../utils/format";
 
@@ -97,6 +97,7 @@ export function PullListPage() {
                   {timeAgo(pr.updated_at)}
                 </div>
               </div>
+              <CopyButton text={pr.html_url} label="Copy URL" title={pr.html_url} />
             </li>
           ))}
         </ul>
