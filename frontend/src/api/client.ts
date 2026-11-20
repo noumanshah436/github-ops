@@ -33,8 +33,20 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return (type.includes("application/json") ? response.json() : response.text()) as Promise<T>;
 }
 
+// Concurrent identical GETs (same path and query string) share one request and its result or error.
+// Only in-flight requests are shared: once one settles, the next GET fetches fresh data.
+const inflight = new Map<string, Promise<unknown>>();
+
+function get<T>(path: string): Promise<T> {
+  const pending = inflight.get(path);
+  if (pending) return pending as Promise<T>;
+  const request = call<T>("GET", path).finally(() => inflight.delete(path));
+  inflight.set(path, request);
+  return request;
+}
+
 export const api = {
-  get: <T>(path: string) => call<T>("GET", path),
+  get,
   post: <T>(path: string, body: unknown = {}) => call<T>("POST", path, body),
   put: <T>(path: string, body: unknown) => call<T>("PUT", path, body),
   del: (path: string) => call<void>("DELETE", path),
