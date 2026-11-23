@@ -120,7 +120,24 @@ All routes are under `/api`. GitHub's error status and message are passed throug
 | GET | `/repos/{owner}/{repo}/pulls/{n}/comments` | create | Conversation comments |
 | POST | `/repos/{owner}/{repo}/pulls` | create | Create a PR. Body: `{title, head, base, body, draft}` |
 | POST | `/repos/{owner}/{repo}/pulls/{n}/approve` | **merge** | Approve. Body: `{"body": "LGTM"}` |
-| PUT | `/repos/{owner}/{repo}/pulls/{n}/merge` | **merge** | Merge. Body: `{sha, merge_method}`. `sha` must be the reviewed head commit, or GitHub returns 409 |
+| PUT | `/repos/{owner}/{repo}/pulls/{n}/merge` | **merge** | Merge. Body: `{sha, merge_method, commit_title?, commit_message?}`. `sha` must be the reviewed head commit, or GitHub returns 409 |
+| POST | `/repos/{owner}/{repo}/pulls/{n}/reviews` | **merge** | Review. Body: `{event: APPROVE\|REQUEST_CHANGES\|COMMENT, body}`; a body is required unless approving |
+| GET | `/repos/{owner}/{repo}/pulls/{n}/review-comments` | create | Inline comments on diff lines |
+| GET | `/repos/{owner}/{repo}/pulls/{n}/events` | create | Timeline events (closed, reopened, labeled, branch deleted…) |
+| GET | `/repos/{owner}/{repo}/labels` | create | Repository labels |
+| GET | `/repos/{owner}/{repo}/assignees` | create | Users who can be assigned or asked to review |
+| PATCH | `/repos/{owner}/{repo}/pulls/{n}` | account | Edit or close/reopen. Body: `{title?, body?, base?, state?: open\|closed, account}` |
+| POST | `/repos/{owner}/{repo}/pulls/{n}/comments` | account | Add a conversation comment. Body: `{body, account}` |
+| PATCH / DELETE | `/repos/{owner}/{repo}/issues/comments/{id}` | account | Edit (`{body, account}`) or delete (`?account=`) a comment |
+| POST | `/repos/{owner}/{repo}/pulls/{n}/draft` | account | `{draft: true}` converts to draft, `{draft: false}` marks ready for review (GraphQL) |
+| PUT | `/repos/{owner}/{repo}/pulls/{n}/update-branch` | account | Merge the base branch into the head. Body: `{expected_head_sha?, account}` |
+| PUT | `/repos/{owner}/{repo}/pulls/{n}/labels` | account | Replace the labels. Body: `{labels, account}` |
+| POST | `/repos/{owner}/{repo}/pulls/{n}/assignees` | account | Body: `{add, remove, account}` |
+| POST | `/repos/{owner}/{repo}/pulls/{n}/requested-reviewers` | account | Body: `{add, remove, account}` |
+| DELETE / POST | `/repos/{owner}/{repo}/pulls/{n}/branch` | account | Delete (`?account=`) or restore (`{account}`) the head branch of a closed PR from this repo |
+
+"account" means the body's `account` (or `?account=`) picks the token: `create` (default) or `merge`.
+Deleting or restoring a branch and "Update branch" need **Contents: read & write** on that token.
 
 **Actions**
 

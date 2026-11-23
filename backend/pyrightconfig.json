@@ -1,15 +1,40 @@
 {
-    "include": ["src", "tests", "run.py"],
+    /**
+     * scripts/local_ci.sh runs pyright on the Python files that are new or
+     * modified compared with origin/main.
+     */
+    "include": [
+        "src",
+        "tests",
+        "run.py"
+    ],
     "venvPath": ".",
     "venv": ".venv",
     "typeCheckingMode": "standard",
     "deprecateTypingAliases": true,
+    "strictSetInference": true,
+    "enableReachabilityAnalysis": true,
+    "reportPrivateUsage": "warning",
     "reportUnnecessaryCast": "error",
     "reportDuplicateImport": "error",
+    "reportInconsistentConstructor": "error",
     "reportMatchNotExhaustive": "error",
     "reportMissingParameterType": "warning",
+    "reportTypeCommentUsage": "error",
     "reportUnusedVariable": "error",
+    "reportUnnecessaryTypeIgnoreComment": "warning",
+    "reportConstantRedefinition": "warning",
+    "reportDeprecated": "warning",
+    "reportIncompleteStub": "error",
+    "reportInvalidStubStatement": "error",
     "reportUnnecessaryComparison": "warning",
+    "reportUnnecessaryContains": "warning",
+    "reportUnusedClass": "warning",
     "reportUnusedImport": "warning",
-    "reportImplicitOverride": "warning"
+    "reportUntypedBaseClass": "warning",
+    "reportImplicitOverride": "warning",
+    "reportPropertyTypeMismatch": "warning"
+
+    // To enable at a later time:
+    // "reportMissingTypeArgument": "warning"
 }

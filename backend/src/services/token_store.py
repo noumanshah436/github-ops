@@ -16,7 +16,10 @@ from src.config import settings
 
 TokenKind = Literal["create", "merge"]
 KINDS: tuple[TokenKind, ...] = ("create", "merge")
-ENV_NAMES: dict[TokenKind, str] = {"create": "GITHUB_TOKEN", "merge": "GITHUB_TOKEN_MERGE"}
+ENV_NAMES: dict[TokenKind, str] = {
+    "create": "GITHUB_TOKEN",
+    "merge": "GITHUB_TOKEN_MERGE",
+}
 LABELS: dict[TokenKind, str] = {
     "create": "GITHUB_TOKEN (create PR)",
     "merge": "GITHUB_TOKEN_MERGE (approve/merge)",
@@ -43,12 +46,16 @@ class TokenStore:
     def _write(self, name: str, value: str | None) -> None:
         """Set or remove one NAME=value line, keeping every other line of .env."""
         lines = [
-            line for line in self._lines() if line.removeprefix("export ").partition("=")[0].strip() != name
+            line
+            for line in self._lines()
+            if line.removeprefix("export ").partition("=")[0].strip() != name
         ]
         if value is not None:
             lines.append(f"{name}={value}")
         self.env_file.parent.mkdir(parents=True, exist_ok=True)
-        self.env_file.write_text("\n".join(lines) + "\n" if lines else "", encoding="utf-8")
+        self.env_file.write_text(
+            "\n".join(lines) + "\n" if lines else "", encoding="utf-8"
+        )
 
     def source(self, kind: TokenKind) -> Literal["env_file", "environment"] | None:
         name = ENV_NAMES[kind]

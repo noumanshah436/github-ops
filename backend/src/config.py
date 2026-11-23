@@ -8,7 +8,9 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="GH_OPS_", env_file=BACKEND_DIR / ".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="GH_OPS_", env_file=BACKEND_DIR / ".env", extra="ignore"
+    )
 
     app_name: str = "gh-ops"
     # Bind to loopback only: this service holds GitHub tokens and has no login of its own.

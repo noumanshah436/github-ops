@@ -1,7 +1,7 @@
 # gh-ops
 
 A local web app for everyday GitHub work:
-- create, approve and merge pull requests
+- create, review, approve, merge, close and reopen pull requests; comment, edit, label, assign and request reviewers
 - watch GitHub Actions runs and read their logs
 
 It's a GUI version of `GitHub_PR_Operations_fashion_studio.md`, using the same two tokens, and it
@@ -92,7 +92,13 @@ hand (see `backend/.env.example`), or `export GITHUB_TOKEN=...` in the shell bef
 - **Pull requests:** the list, then a PR's conversation, commits, file diffs and checks.
   - The merge box shows checks, approvals and conflicts.
   - **Approve** uses `GITHUB_TOKEN_MERGE`.
-  - **Merge** confirms first and only merges the commit you were looking at.
+  - **Merge** confirms first and only merges the commit you were looking at. "Edit message…" sets the commit title and body.
+  - **Review changes** (top right) leaves a comment, approval or change request as `GITHUB_TOKEN_MERGE`.
+  - **Acting as** (next to the +/− counts) picks which saved account comments, closes or reopens, edits the title,
+    description or base branch, marks draft / ready, updates the branch, changes reviewers, assignees and labels,
+    and deletes or restores the head branch.
+  - The comment box at the bottom has **Close pull request** / **Reopen pull request** (with your comment, if you wrote one).
+  - Comments written by one of your two accounts can be edited or deleted.
 - **+ New pull request:**
   - Pick base and compare branches. The base defaults to `staging`.
   - Write the title and body, or click **Load pr_body.json**.

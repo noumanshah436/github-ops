@@ -23,14 +23,14 @@ dev = [
 [tool.uv]
 package = false
 
+# Run `bash scripts/local_ci.sh` (or `make lint`).
 [tool.ruff]
 include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py", "run.py"]
 target-version = "py313"
-line-length = 110
 
 [tool.ruff.lint]
 extend-select = ["I", "UP", "FAST", "PT", "FURB", "RUF006", "RUF012", "RUF015", "RUF100", "ASYNC", "C4", "DTZ", "B", "FBT"]
-ignore = ["E731", "PT018", "B905", "FBT001", "FBT002", "B008"]
+ignore = ["E731", "PT018", "B905", "FBT001", "FBT002"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["src", "tests"]

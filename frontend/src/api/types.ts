@@ -40,6 +40,18 @@ export interface PullSummary {
   base: { ref: string };
 }
 
+export interface Label {
+  id: number;
+  name: string;
+  color: string;
+  description: string | null;
+}
+
+export interface Team {
+  slug: string;
+  name: string;
+}
+
 export interface PullPage {
   items: PullSummary[];
   total_count: number;
@@ -48,7 +60,14 @@ export interface PullPage {
 }
 
 export interface Pull extends PullSummary {
+  node_id: string;
   body: string | null;
+  closed_at: string | null;
+  head: { ref: string; sha: string; repo: { full_name: string } | null };
+  labels: Label[];
+  assignees: User[];
+  requested_reviewers: User[];
+  requested_teams: Team[];
   merged: boolean;
   mergeable: boolean | null;
   mergeable_state: string;
@@ -103,6 +122,10 @@ export interface PullDetail {
   checks_summary: ChecksSummary;
   /** Why some checks couldn't be read (missing token permissions). */
   checks_notes: string[];
+  /** For closed PRs from this repo: whether the head branch still exists. */
+  head_branch_exists: boolean | null;
+  /** For open PRs: commits on the base branch the head doesn't have yet. */
+  behind_by: number | null;
 }
 
 export interface Commit {
@@ -125,6 +148,32 @@ export interface Comment {
   user: User;
   body: string;
   created_at: string;
+  updated_at: string;
+  html_url: string;
+}
+
+/** An inline comment on a line of the diff. */
+export interface ReviewComment extends Comment {
+  path: string;
+  line: number | null;
+  original_line: number | null;
+  diff_hunk: string;
+  pull_request_review_id: number | null;
+  in_reply_to_id?: number;
+}
+
+/** Issue event: closed, reopened, merged, labeled, assigned, renamed, head_ref_deleted... */
+export interface IssueEvent {
+  id: number;
+  event: string;
+  actor: User | null;
+  created_at: string;
+  commit_id: string | null;
+  label?: { name: string; color: string };
+  assignee?: User;
+  requested_reviewer?: User;
+  requested_team?: Team;
+  rename?: { from: string; to: string };
 }
 
 export interface Compare {

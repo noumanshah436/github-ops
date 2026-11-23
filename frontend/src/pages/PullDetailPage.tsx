@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { api } from "../api/client";
-import type { Comment, Commit, FileChange, PullDetail } from "../api/types";
+import type { Commit, FileChange, Pull, PullDetail, TokenKind } from "../api/types";
 import { Avatar, CopyButton, ErrorBox, Flash, Loading } from "../components/common";
 import { DiffView } from "../components/DiffView";
-import { Markdown } from "../components/Markdown";
+import { CommentBox } from "../components/pull/CommentBox";
+import { MergeBox } from "../components/pull/MergeBox";
+import { ReviewPanel } from "../components/pull/ReviewPanel";
+import { Sidebar } from "../components/pull/Sidebar";
+import { Timeline } from "../components/pull/Timeline";
 import { StatusIcon } from "../components/StatusIcon";
+import { useAccounts, useAction, type Account } from "../hooks/useAccounts";
 import { useApi } from "../hooks/useApi";
-import { useTokens } from "../hooks/useTokens";
 import { firstLine, timeAgo } from "../utils/format";
 
 const TABS = ["conversation", "commits", "files", "checks"] as const;
@@ -19,50 +23,6 @@ function PrState({ detail }: { detail: PullDetail }) {
   if (pr.merged) return <span className="state-badge merged">⮌ Merged</span>;
   if (pr.state === "closed") return <span className="state-badge closed">⨯ Closed</span>;
   return <span className={`state-badge ${pr.draft ? "draft" : "open"}`}>⇄ {pr.draft ? "Draft" : "Open"}</span>;
-}
-
-function Conversation({ detail, base }: { detail: PullDetail; base: string }) {
-  const { data: comments } = useApi<Comment[]>(`${base}/comments`);
-  const events = [
-    ...detail.reviews
-      .filter((r) => r.state !== "PENDING")
-      .map((r) => ({ key: `r${r.id}`, at: r.submitted_at, user: r.user, kind: r.state, body: r.body })),
-    ...(comments ?? []).map((c) => ({ key: `c${c.id}`, at: c.created_at, user: c.user, kind: "COMMENTED", body: c.body })),
-  ].sort((a, b) => a.at.localeCompare(b.at));
-  const reviewText: Record<string, string> = {
-    APPROVED: "approved these changes",
-    CHANGES_REQUESTED: "requested changes",
-    COMMENTED: "commented",
-    DISMISSED: "had a review dismissed",
-  };
-  return (
-    <div className="timeline">
-      <div className="comment">
-        <div className="comment-header">
-          <Avatar user={detail.pr.user} /> <strong>{detail.pr.user.login}</strong>{" "}
-          <span className="muted">opened {timeAgo(detail.pr.created_at)}</span>
-        </div>
-        <div className="comment-body">
-          <Markdown text={detail.pr.body} />
-        </div>
-      </div>
-      {events.map((e) => (
-        <div key={e.key} className={`comment ${e.kind === "APPROVED" ? "approved" : ""}`}>
-          <div className="comment-header">
-            <Avatar user={e.user} /> <strong>{e.user.login}</strong>{" "}
-            <span className="muted">
-              {reviewText[e.kind] ?? e.kind.toLowerCase()} {timeAgo(e.at)}
-            </span>
-          </div>
-          {e.body?.trim() && (
-            <div className="comment-body">
-              <Markdown text={e.body} />
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function Commits({ base, owner, repo }: { base: string; owner: string; repo: string }) {
@@ -162,145 +122,144 @@ function Checks({ detail, owner, repo }: { detail: PullDetail; owner: string; re
   );
 }
 
-function MergeBox({ detail, base, onDone }: { detail: PullDetail; base: string; onDone: () => void }) {
-  const { tokens } = useTokens();
-  const { pr, checks_summary: checks, reviews } = detail;
-  const [method, setMethod] = useState<"merge" | "squash" | "rebase">("merge");
-  const [busy, setBusy] = useState<"approve" | "merge" | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
-  const merger = tokens?.merge && !tokens.merge.error ? tokens.merge.login : null;
-  const isAuthor = merger === pr.user.login;
-  const alreadyApproved = reviews.some((r) => r.state === "APPROVED" && r.user.login === merger);
-  const approvals = new Set(reviews.filter((r) => r.state === "APPROVED").map((r) => r.user.login));
-
-  const run = async (kind: "approve" | "merge") => {
-    setBusy(kind);
-    setError(null);
-    setNotice(null);
-    try {
-      if (kind === "approve") {
-        await api.post(`${base}/approve`, { body: "LGTM" });
-        setNotice(`Approved as ${merger}.`);
-      } else {
-        await api.put(`${base}/merge`, { sha: pr.head.sha, merge_method: method });
-        setNotice(`Merged into ${pr.base.ref}.`);
-      }
-      onDone();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
+/** Inline editor for the title and (while open) the base branch. */
+function TitleEditor({
+  pr,
+  base,
+  repoBase,
+  account,
+  onDone,
+  onCancel,
+}: {
+  pr: Pull;
+  base: string;
+  repoBase: string;
+  account: Account | null;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState(pr.title);
+  const [baseRef, setBaseRef] = useState(pr.base.ref);
+  const { data: branches } = useApi<string[]>(pr.state === "open" ? `${repoBase}/branches` : null);
+  const action = useAction();
+  const save = async () => {
+    const changes: { title?: string; base?: string } = {};
+    if (title.trim() && title.trim() !== pr.title) changes.title = title.trim();
+    if (baseRef !== pr.base.ref) changes.base = baseRef;
+    if (!changes.title && !changes.base) return onCancel();
+    if (changes.base && !window.confirm(`Change the base branch from ${pr.base.ref} to ${baseRef}?`)) return;
+    const ok = await action.run("save", () => api.patch(base, { ...changes, account: account?.kind ?? "create" }).then(() => {}));
+    if (ok) onDone();
   };
-
-  const confirmMerge = () => {
-    const warnings = [
-      checks.failure ? `${checks.failure} check(s) failed.` : "",
-      checks.pending ? `${checks.pending} check(s) still running.` : "",
-    ].filter(Boolean);
-    const message = [
-      `Merge #${pr.number} (${pr.head.ref} → ${pr.base.ref}) with "${method}"?`,
-      `Commit ${pr.head.sha.slice(0, 7)} as ${merger}.`,
-      ...warnings,
-    ].join("\n");
-    if (window.confirm(message)) void run("merge");
-  };
-
-  if (pr.merged) {
-    return (
-      <div className="box merge-box merged">
-        <div className="box-body">
-          <strong>Merged</strong> by {pr.merged_by?.login} {timeAgo(pr.merged_at)} into{" "}
-          <span className="mono">{pr.base.ref}</span>.
-        </div>
-      </div>
-    );
-  }
-  if (pr.state === "closed") return null;
-
-  const mergeable =
-    pr.mergeable === null ? "GitHub is still checking whether this can merge…" : pr.mergeable ? "No conflicts with the base branch." : "This branch has conflicts that must be resolved on GitHub.";
-  const checksText = checks.total
-    ? `${checks.success} passed · ${checks.failure} failed · ${checks.pending} running${checks.skipped ? ` · ${checks.skipped} skipped` : ""}`
-    : "No checks.";
-
   return (
-    <div className="box merge-box">
-      <div className="box-body">
-        <div className="merge-row">
-          <StatusIcon
-            status={checks.pending ? "in_progress" : "completed"}
-            conclusion={checks.failure ? "failure" : checks.total ? "success" : null}
-          />
-          <span>
-            <strong>Checks:</strong> {checksText}
-            {detail.checks_notes.length > 0 && <span className="muted small"> (partial, see Checks tab)</span>}
-          </span>
-        </div>
-        <div className="merge-row">
-          <StatusIcon status="completed" conclusion={approvals.size ? "success" : null} />
-          <span>
-            <strong>Approvals:</strong> {approvals.size ? [...approvals].join(", ") : "none yet"}
-          </span>
-        </div>
-        <div className="merge-row">
-          <StatusIcon status={pr.mergeable === null ? "queued" : "completed"} conclusion={pr.mergeable ? "success" : "failure"} />
-          <span>
-            {mergeable} <span className="muted small">({pr.mergeable_state})</span>
-          </span>
-        </div>
-        {!merger && (
-          <Flash kind="warn">
-            Add <code>GITHUB_TOKEN_MERGE</code> under <Link to="/tokens">Tokens</Link> to approve and merge.
-          </Flash>
-        )}
-        {merger && (
-          <div className="row merge-actions">
-            <button
-              type="button"
-              className="btn"
-              disabled={busy !== null || isAuthor || alreadyApproved || pr.draft}
-              title={isAuthor ? `${merger} opened this PR and can't approve it` : alreadyApproved ? "Already approved" : ""}
-              onClick={() => void run("approve")}
-            >
-              {busy === "approve" ? "Approving…" : alreadyApproved ? "✔ Approved" : `Approve as ${merger}`}
-            </button>
-            <span className="spacer" />
-            <select className="input" value={method} onChange={(e) => setMethod(e.target.value as typeof method)}>
-              <option value="merge">Create a merge commit</option>
-              <option value="squash">Squash and merge</option>
-              <option value="rebase">Rebase and merge</option>
-            </select>
-            <button
-              type="button"
-              className="btn btn-merge"
-              disabled={busy !== null || pr.mergeable === false || pr.draft}
-              onClick={confirmMerge}
-            >
-              {busy === "merge" ? "Merging…" : "Merge pull request"}
-            </button>
-          </div>
-        )}
-        {isAuthor && <p className="muted small">GITHUB_TOKEN_MERGE belongs to the PR author, so it can merge but not approve.</p>}
-        <ErrorBox error={error} />
-        {notice && <Flash kind="success">{notice}</Flash>}
+    <div className="stack title-editor">
+      <div className="row">
+        <input
+          className="input grow title-input"
+          value={title}
+          autoFocus
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void save();
+            if (e.key === "Escape") onCancel();
+          }}
+        />
+        <button type="button" className="btn btn-primary" disabled={action.busy !== null || !title.trim() || !account} onClick={() => void save()}>
+          {action.busy ? "Saving…" : "Save"}
+        </button>
+        <button type="button" className="btn" onClick={onCancel}>
+          Cancel
+        </button>
       </div>
+      {pr.state === "open" && (
+        <label className="row small">
+          Base branch
+          <select className="input" value={baseRef} onChange={(e) => setBaseRef(e.target.value)}>
+            {[...new Set([pr.base.ref, ...(branches ?? [])])]
+              .filter((b) => b !== pr.head.ref)
+              .map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+          </select>
+        </label>
+      )}
+      <ErrorBox error={action.error} />
     </div>
   );
+}
+
+/** Which saved account performs comments, close/reopen, edits and sidebar changes. */
+function AccountPicker({ accounts, value, onChange }: { accounts: Account[]; value: Account | null; onChange: (kind: TokenKind) => void }) {
+  if (!value) return null;
+  if (accounts.length < 2) {
+    return (
+      <span className="muted small" title="Comments, close/reopen, edits and sidebar changes use this account">
+        acting as <Avatar user={value.user} size={16} /> {value.login}
+      </span>
+    );
+  }
+  return (
+    <label className="small row" title="Comments, close/reopen, edits and sidebar changes use this account. Reviews and merges always use GITHUB_TOKEN_MERGE.">
+      Acting as
+      <select className="input input-sm" value={value.kind} onChange={(e) => onChange(e.target.value as TokenKind)}>
+        {accounts.map((a) => (
+          <option key={a.kind} value={a.kind}>
+            {a.login} ({a.kind === "create" ? "GITHUB_TOKEN" : "GITHUB_TOKEN_MERGE"})
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+const ACCOUNT_KEY = "gh-ops:acting-account";
+
+function savedAccount(): TokenKind {
+  try {
+    return localStorage.getItem(ACCOUNT_KEY) === "merge" ? "merge" : "create";
+  } catch {
+    return "create";
+  }
 }
 
 export function PullDetailPage() {
   const { owner = "", repo = "", number = "" } = useParams();
   const [params, setParams] = useSearchParams();
   const tab = (TABS as readonly string[]).includes(params.get("tab") ?? "") ? (params.get("tab") as Tab) : "conversation";
-  const base = `/repos/${owner}/${repo}/pulls/${number}`;
+  const repoBase = `/repos/${owner}/${repo}`;
+  const base = `${repoBase}/pulls/${number}`;
   // Refresh every 15s while checks are running or GitHub hasn't worked out mergeability yet.
   const { data, error, loading, reload } = useApi<PullDetail>(base, {
     pollMs: 15000,
     shouldPoll: (d) => d.pr.state === "open" && (d.checks_summary.pending > 0 || d.pr.mergeable === null),
   });
+  const accounts = useAccounts();
+  const [accountKind, setAccountKind] = useState<TokenKind>(savedAccount);
+  const account = accounts.find((a) => a.kind === accountKind) ?? accounts[0] ?? null;
+  const merger = accounts.find((a) => a.kind === "merge") ?? null;
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  // Bumped after every write so the timeline (comments, events) refetches too.
+  const [refreshKey, setRefreshKey] = useState(0);
+  const changed = () => {
+    reload();
+    setRefreshKey((k) => k + 1);
+  };
+  const chooseAccount = (kind: TokenKind) => {
+    setAccountKind(kind);
+    try {
+      localStorage.setItem(ACCOUNT_KEY, kind);
+    } catch {
+      // remembering the choice is optional
+    }
+  };
+  useEffect(() => {
+    setEditingTitle(false);
+    setReviewing(false);
+  }, [number]);
 
   if (loading && !data) return <Loading />;
   if (!data) return <ErrorBox error={error} onRetry={reload} />;
@@ -308,24 +267,42 @@ export function PullDetailPage() {
 
   return (
     <div>
-      <div className="pr-title-row">
-        <h2 className="pr-title">
-          {pr.title} <span className="muted">#{pr.number}</span>
-        </h2>
-        <a href={pr.html_url} target="_blank" rel="noreferrer" className="btn btn-sm">
-          Open on GitHub ↗
-        </a>
-        <CopyButton text={pr.html_url} label="Copy URL" title={pr.html_url} />
-      </div>
+      {editingTitle ? (
+        <TitleEditor
+          pr={pr}
+          base={base}
+          repoBase={repoBase}
+          account={account}
+          onCancel={() => setEditingTitle(false)}
+          onDone={() => {
+            setEditingTitle(false);
+            changed();
+          }}
+        />
+      ) : (
+        <div className="pr-title-row">
+          <h2 className="pr-title">
+            {pr.title} <span className="muted">#{pr.number}</span>
+          </h2>
+          <button type="button" className="btn btn-sm" disabled={!account} onClick={() => setEditingTitle(true)}>
+            Edit
+          </button>
+          <a href={pr.html_url} target="_blank" rel="noreferrer" className="btn btn-sm">
+            Open on GitHub ↗
+          </a>
+          <CopyButton text={pr.html_url} label="Copy URL" title={pr.html_url} />
+        </div>
+      )}
       <div className="pr-meta">
         <PrState detail={data} />
         <span>
-          <strong>{pr.user.login}</strong> wants to merge {pr.commits} commit{pr.commits === 1 ? "" : "s"} into{" "}
+          <strong>{pr.user.login}</strong> {pr.merged ? "merged" : "wants to merge"} {pr.commits} commit{pr.commits === 1 ? "" : "s"} into{" "}
           <span className="branch">{pr.base.ref}</span> from <span className="branch">{pr.head.ref}</span>
         </span>
         <span className="spacer" />
+        <AccountPicker accounts={accounts} value={account} onChange={chooseAccount} />
         <span className="add">+{pr.additions}</span> <span className="del">−{pr.deletions}</span>
-        <button type="button" className="btn btn-sm" onClick={reload}>
+        <button type="button" className="btn btn-sm" onClick={changed} title="Refresh">
           ↻
         </button>
       </div>
@@ -343,12 +320,22 @@ export function PullDetailPage() {
         <Link to={`/${owner}/${repo}/actions?branch=${encodeURIComponent(pr.head.ref)}`} className="small">
           Actions on {pr.head.ref} →
         </Link>
+        {pr.state === "open" && (
+          <button type="button" className={`btn btn-sm ${reviewing ? "" : "btn-primary"}`} onClick={() => setReviewing((r) => !r)}>
+            Review changes ▾
+          </button>
+        )}
       </nav>
+      {reviewing && pr.state === "open" && <ReviewPanel pr={pr} base={base} merger={merger} onDone={changed} onClose={() => setReviewing(false)} />}
       {tab === "conversation" && (
-        <>
-          <Conversation detail={data} base={base} />
-          <MergeBox detail={data} base={base} onDone={reload} />
-        </>
+        <div className="pr-layout">
+          <div className="pr-main">
+            <Timeline detail={data} base={base} repoBase={repoBase} account={account} accounts={accounts} refreshKey={refreshKey} onChanged={changed} />
+            <MergeBox detail={data} base={base} account={account} merger={merger} onDone={changed} />
+            <CommentBox pr={pr} base={base} account={account} onDone={changed} />
+          </div>
+          <Sidebar detail={data} base={base} repoBase={repoBase} account={account} onChanged={changed} />
+        </div>
       )}
       {tab === "commits" && <Commits base={base} owner={owner} repo={repo} />}
       {tab === "files" && <Files base={base} />}

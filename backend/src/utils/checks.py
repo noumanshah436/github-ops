@@ -5,7 +5,9 @@ from typing import Any
 from src.schemas.pulls import ChecksSummary
 
 
-def summarize_checks(check_runs: list[dict[str, Any]], statuses: list[dict[str, Any]]) -> ChecksSummary:
+def summarize_checks(
+    check_runs: list[dict[str, Any]], statuses: list[dict[str, Any]]
+) -> ChecksSummary:
     summary = ChecksSummary()
     for run in check_runs:
         summary.total += 1
@@ -39,7 +41,9 @@ def actions_runs_as_check_runs(runs: list[dict[str, Any]]) -> list[dict[str, Any
             "conclusion": run.get("conclusion"),
             "html_url": run.get("html_url"),
             "started_at": run.get("run_started_at"),
-            "completed_at": run.get("updated_at") if run.get("status") == "completed" else None,
+            "completed_at": run.get("updated_at")
+            if run.get("status") == "completed"
+            else None,
             "workflow_run_id": run["id"],
         }
         for run in runs
