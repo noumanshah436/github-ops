@@ -62,7 +62,10 @@ export function Layout() {
     <div className="app">
       <header className="topbar">
         <NavLink to="/" className="brand">
-          ⎇ gh-ops
+          <img src="/logo.svg" alt="" className="brand-logo" />
+          <span>
+            github<span className="brand-ops">-ops</span>
+          </span>
         </NavLink>
         <RepoPicker />
         <span className="spacer" />
@@ -82,6 +85,10 @@ export function Layout() {
       <main className="content">
         <Outlet />
       </main>
+      <footer className="footer">
+        github-ops · built by Syed Nouman, Senior Software Engineer @ Meissasoft ·{" "}
+        <a href="mailto:noumanshah436@gmail.com">noumanshah436@gmail.com</a>
+      </footer>
     </div>
   );
 }

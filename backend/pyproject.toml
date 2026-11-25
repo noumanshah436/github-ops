@@ -1,8 +1,9 @@
 [project]
-name = "gh-ops-backend"
+name = "github-ops-backend"
 version = "0.1.0"
 description = "Local GitHub PR and Actions console: token store and GitHub API proxy"
 readme = "README.md"
+authors = [{ name = "Syed Nouman", email = "noumanshah436@gmail.com" }]
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "fastapi>=0.115",

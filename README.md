@@ -1,4 +1,4 @@
-# gh-ops
+# github-ops
 
 A local web app for everyday GitHub work:
 - create, review, approve, merge, close and reopen pull requests; comment, edit, label, assign and request reviewers
@@ -59,7 +59,7 @@ PowerShell, from `D:\Meissasoft\gh-ops`:
 .\start.ps1
 ```
 
-This opens two PowerShell windows, "gh-ops backend :8765" and "gh-ops frontend :5173", both with
+This opens two PowerShell windows, "github-ops backend :8765" and "github-ops frontend :5173", both with
 hot reload. Close a window (or press `Ctrl+C` in it) to stop that server.
 
 If PowerShell says running scripts is disabled, use
@@ -132,3 +132,7 @@ Checks are listed in each part's README.
 | Merge fails with 409 | New commits arrived since you opened the page. Refresh and merge again |
 | App shows `Failed to fetch` | The backend isn't running on :8765. Start it, or check its terminal for errors |
 | Port 8765 is in use | Set `GH_OPS_PORT=8766` in `backend/.env` and `VITE_API_URL=http://127.0.0.1:8766` in `frontend/.env.local` |
+
+## Author
+
+**Syed Nouman** · Senior Software Engineer @ Meissasoft · [noumanshah436@gmail.com](mailto:noumanshah436@gmail.com)

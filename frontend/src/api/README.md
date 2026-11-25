@@ -1,6 +1,6 @@
 # api
 
-The frontend's only link to the gh-ops backend: a small fetch wrapper and the TypeScript shapes of the data it returns.
+The frontend's only link to the github-ops backend: a small fetch wrapper and the TypeScript shapes of the data it returns.
 
 ## Files
 

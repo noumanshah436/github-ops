@@ -1,6 +1,6 @@
-# gh-ops backend
+# github-ops backend
 
-FastAPI service behind the gh-ops UI. It stores the two GitHub tokens and calls the GitHub API
+FastAPI service behind the github-ops UI. It stores the two GitHub tokens and calls the GitHub API
 with them. The browser never receives a token: every GitHub call goes through this service.
 
 It listens on `127.0.0.1:8765` only. It has no login of its own, so it must not be exposed to

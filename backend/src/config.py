@@ -12,7 +12,7 @@ class Settings(BaseSettings):
         env_prefix="GH_OPS_", env_file=BACKEND_DIR / ".env", extra="ignore"
     )
 
-    app_name: str = "gh-ops"
+    app_name: str = "github-ops"
     # Bind to loopback only: this service holds GitHub tokens and has no login of its own.
     host: str = "127.0.0.1"
     port: int = 8765

@@ -1,4 +1,4 @@
-"""gh-ops backend: GitHub PR and Actions API on 127.0.0.1:8765 (Swagger at /docs)."""
+"""github-ops backend: GitHub PR and Actions API on 127.0.0.1:8765 (Swagger at /docs)."""
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -21,7 +21,15 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     await github.aclose()
 
 
-app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app = FastAPI(
+    title=settings.app_name,
+    description="Local GitHub PR and Actions console.",
+    contact={
+        "name": "Syed Nouman, Senior Software Engineer @ Meissasoft",
+        "email": "noumanshah436@gmail.com",
+    },
+    lifespan=lifespan,
+)
 
 # The frontend runs on its own port, so the browser needs permission to call this API.
 # Only the listed origins are allowed: other websites can't use your tokens through it.

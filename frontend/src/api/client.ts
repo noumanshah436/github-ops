@@ -1,4 +1,4 @@
-// Calls the gh-ops backend directly (it adds the GitHub token). Errors carry GitHub's message.
+// Calls the github-ops backend directly (it adds the GitHub token). Errors carry GitHub's message.
 // Override the backend address with VITE_API_URL in frontend/.env.local if it isn't on :8765.
 const API_URL = (import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8765").replace(/\/$/, "");
 

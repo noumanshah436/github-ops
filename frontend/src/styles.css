@@ -139,9 +139,23 @@ code {
   border-bottom: 1px solid var(--border);
 }
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
   color: var(--fg);
+}
+.brand:hover {
+  text-decoration: none;
+}
+.brand-logo {
+  width: 28px;
+  height: 28px;
+}
+.brand-ops {
+  color: var(--accent);
 }
 .repo-picker {
   min-width: 280px;
@@ -214,13 +228,28 @@ code {
   font-size: 12px;
 }
 
+/* Footer sits at the bottom of the window on short pages, after the content on long ones. */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 .content {
+  flex: 1 0 auto;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px 24px 60px;
 }
 .narrow {
   max-width: 760px;
+}
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 16px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-muted);
 }
 
 /* boxes and lists */

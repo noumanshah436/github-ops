@@ -1,9 +1,9 @@
-# gh-ops frontend
+# github-ops frontend
 
-React + TypeScript UI for gh-ops, built with Vite. It looks and works like a cut-down GitHub:
+React + TypeScript UI for github-ops, built with Vite. It looks and works like a cut-down GitHub:
 pull requests, a new-PR form, and GitHub Actions runs with logs.
 
-The UI only talks to the gh-ops backend (`/api/*`). It never handles a GitHub token directly,
+The UI only talks to the github-ops backend (`/api/*`). It never handles a GitHub token directly,
 so the backend must be running.
 
 ## Requirements

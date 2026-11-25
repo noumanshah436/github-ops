@@ -1,7 +1,8 @@
 {
-  "name": "gh-ops-frontend",
+  "name": "github-ops-frontend",
   "private": true,
   "version": "0.1.0",
+  "author": "Syed Nouman <noumanshah436@gmail.com>",
   "type": "module",
   "scripts": {
     "dev": "vite",

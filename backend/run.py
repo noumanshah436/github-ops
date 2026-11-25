@@ -1,4 +1,4 @@
-"""Start the gh-ops backend: python run.py [--reload]"""
+"""Start the github-ops backend: python run.py [--reload]"""
 
 import os
 import sys

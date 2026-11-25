@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local CI for the gh-ops backend: ruff format check, ruff lint (incl. import
+# Local CI for the github-ops backend: ruff format check, ruff lint (incl. import
 # order) and pyright on NEW or MODIFIED Python files only, then the tests.
 #
 # Untouched existing files are not checked. A file you change must pass in full.
